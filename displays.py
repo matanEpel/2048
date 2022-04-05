@@ -1,5 +1,7 @@
 import time
 
+import numpy as np
+
 
 class SummaryDisplay(object):
     def __init__(self):
@@ -30,5 +32,6 @@ class SummaryDisplay(object):
         print("="*30)
         print("scores: %s" % self.scores)
         print("highest tile: %s" % self.highest_tile)
+        print("average: %s" % np.average(self.highest_tile))
         print("game_durations: %s" % self.game_durations)
         print("win rate: %s" % win_rate)
