@@ -2,6 +2,7 @@ import numpy as np
 import abc
 import util
 from game import Agent, Action
+from game_state import GameState
 
 
 class ReflexAgent(Agent):
@@ -137,7 +138,35 @@ class MinmaxAgent(MultiAgentSearchAgent):
             Returns the successor game state after an agent takes an action
         """
         """*** YOUR CODE HERE ***"""
-        util.raiseNotDefined()
+
+        legal_moves = game_state.get_agent_legal_actions()
+        # Choose one of the best actions
+        print(legal_moves)
+        scores = [self.get_action_minimax(game_state.generate_successor(0, action), 0, True) for action in legal_moves]
+        print(scores)
+        best_score = self.get_action_minimax(game_state, 0, True)
+        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
+        chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
+
+        return legal_moves[chosen_index]
+
+    def get_action_minimax(self, game_state: GameState, curDepth, maxTurn):
+        print("entered mini max")
+        if curDepth == self.depth - 1:
+            legal_moves = game_state.get_agent_legal_actions()
+            scores = [self.evaluation_function(game_state, action) for action in legal_moves]
+            return max(scores)
+
+        if maxTurn:
+            legal_moves = game_state.get_agent_legal_actions()
+            scores = [self.get_action_minimax(game_state.generate_successor(0, action), curDepth+1, False) for action in legal_moves]
+            return max(scores)
+
+        else:
+            return self.get_action_minimax(game_state.generate_successor(1), curDepth, True)
+
+
+
 
 
 
