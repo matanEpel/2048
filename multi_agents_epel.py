@@ -72,14 +72,6 @@ class ReflexAgent(Agent):
         for s in [scores1,scores2,scores3,scores4,scores5,scores6,scores7,scores8]:
             final_score = max(final_score, np.sum(np.multiply(np.multiply(s,s),board)))
         return final_score
-        score = np.dot(snake,board)
-
-        if action.name == "LEFT":
-            return 10
-        elif action.name == "DOWN":
-            return 100
-        else:
-            return not_zero_bonus + max_tile_bonus
 
 
 
