@@ -33,5 +33,7 @@ class SummaryDisplay(object):
         print("scores: %s" % self.scores)
         print("highest tile: %s" % self.highest_tile)
         print("average: %s" % np.average(self.highest_tile))
+        unique, counts = np.unique(self.highest_tile, return_counts=True)
+        print("values: ", dict(zip(unique, counts)))
         print("game_durations: %s" % self.game_durations)
         print("win rate: %s" % win_rate)

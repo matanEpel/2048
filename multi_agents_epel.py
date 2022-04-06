@@ -33,7 +33,7 @@ class ReflexAgent(Agent):
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
 
         "Add more of your code here if you want to"
-
+        board = game_state.board
         return legal_moves[chosen_index]
 
     def evaluation_function(self, current_game_state, action):
@@ -53,26 +53,18 @@ class ReflexAgent(Agent):
         score = successor_game_state.score
 
         "*** YOUR CODE HERE ***"
-        # calculating the percentage of  tiles we are "deleting" out of the max possible:
-        not_zero = np.count_nonzero(board)
-        not_zero_bonus = (np.count_nonzero(current_game_state.board) - not_zero + 1)/4
+        max_bonus = 0
+        if current_game_state.max_tile < max_tile:
+            max_bonus = 1
 
-        max_tile_bonus = 0
+        free_bonus = np.count_nonzero(current_game_state.board) - np.count_nonzero(board) - 1
 
-        scores1 = np.array([[1,2,3,4],[8,7,6,5],[9,10,11,12],[16,15,14,13]])
-        scores2 = np.array([[4,3,2,1], [5,6,7,8], [12,11,10,9], [13,14,15,16]])
-        scores3 = np.array([[16, 15, 14, 13], [9, 10, 11, 12], [8, 7, 6, 5], [1, 2, 3, 4]])
-        scores4 = np.array([[13,14,15,16], [12,11,10,9], [5,6,7,8], [4,3,2,1]])
-        scores5 = np.transpose(scores1)
-        scores6 = np.transpose(scores2)
-        scores7 = np.transpose(scores3)
-        scores8 = np.transpose(scores4)
+        score_bonus = 0
+        if score > current_game_state.score:
+            score_bonus = 1
 
-        final_score = 0
-        for s in [scores1,scores2,scores3,scores4,scores5,scores6,scores7,scores8]:
-            final_score = max(final_score, np.sum(np.multiply(np.multiply(s,s),board)))
-        return final_score
-
+        return score_bonus + free_bonus + max_bonus
+        return better_evaluation_function(successor_game_state)
 
 
 def score_evaluation_function(current_game_state):
@@ -132,7 +124,6 @@ class MinmaxAgent(MultiAgentSearchAgent):
         util.raiseNotDefined()
 
 
-
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
@@ -144,7 +135,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         """*** YOUR CODE HERE ***"""
         util.raiseNotDefined()
-
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
@@ -163,9 +153,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         util.raiseNotDefined()
 
 
-
-
-
 def better_evaluation_function(current_game_state):
     """
     Your extreme 2048 evaluation function (question 5).
@@ -173,7 +160,31 @@ def better_evaluation_function(current_game_state):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    board = current_game_state.board
+
+    scores1 = np.array([[6, 5, 4, 3], [5, 4, 3, 2], [4, 3, 2, 1], [3, 2, 1, 0]])
+    scores2 = np.array([[3, 4, 5, 6], [2, 3, 4, 5], [1, 2, 3, 4], [0, 1, 2, 3]])
+    scores3 = np.array([[3, 2, 1, 0], [4, 3, 2, 1], [5, 4, 3, 2], [6, 5, 4, 3]])
+    scores4 = np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]])
+
+    scores = [0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 6]
+
+    snake = 0
+    for s in [scores1, scores2, scores3, scores4]:
+        snake = max(snake, np.sum(np.multiply(s, board)))
+    max_possible = 0
+    data = np.sort(board.flatten())
+    for i in range(0, len(data)):
+        max_possible += data[i] * scores[i]
+    snake_score = snake / max_possible
+
+    free_tiles_factor = 16 - np.log2(current_game_state.max_tile)
+    free_tiles_score = (16 - np.count_nonzero(board)) / free_tiles_factor
+
+    max_bonus = 0
+    if max([board[0,0], board[0,3], board[3,0], board[3,3]]) == current_game_state.max_tile:
+        max_bonus = 1
+    return snake_score + free_tiles_score + max_bonus*2
 
 
 # Abbreviation
