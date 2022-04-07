@@ -147,20 +147,17 @@ class MinmaxAgent(MultiAgentSearchAgent):
 
         legal_moves = game_state.get_agent_legal_actions()
         # Choose one of the best actions
-        print(legal_moves)
         scores = [self.get_action_minimax(game_state.generate_successor(0, action), 0, True) for action in legal_moves]
-        print(scores)
-        best_score = self.get_action_minimax(game_state, 0, True)
+        best_score = max(scores)
         best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
 
         return legal_moves[chosen_index]
 
     def get_action_minimax(self, game_state: GameState, curDepth, maxTurn):
-        print("entered mini max")
         if curDepth == self.depth - 1:
             legal_moves = game_state.get_agent_legal_actions()
-            scores = [self.evaluation_function(game_state, action) for action in legal_moves]
+            scores = [self.evaluation_function(game_state.generate_successor(0, action)) for action in legal_moves]
             return max(scores)
 
         if maxTurn:
