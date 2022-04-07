@@ -182,7 +182,36 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         """*** YOUR CODE HERE ***"""
-        util.raiseNotDefined()
+        legal_moves = game_state.get_agent_legal_actions()
+        # Choose one of the best actions
+        scores = [self.get_action_alpha_beta(game_state.generate_successor(0, action), 0, True, float("-inf"), float("inf"))
+                  for action in legal_moves]
+        best_score = max(scores)
+        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
+        chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
+
+        return legal_moves[chosen_index]
+
+    def get_action_alpha_beta(self, game_state: GameState, curDepth, maxTurn, alpha, beta):
+        if curDepth == self.depth - 1:
+            legal_moves = game_state.get_agent_legal_actions()
+            scores = [self.evaluation_function(game_state.generate_successor(0, action)) for action in legal_moves]
+            return max(scores)
+
+        if maxTurn:
+            best_value = float("-inf")
+            legal_moves = game_state.get_agent_legal_actions()
+            for action in legal_moves:
+                value = self.get_action_alpha_beta(game_state.generate_successor(0, action), curDepth + 1, False, alpha, beta)
+                best_value = max(best_value, value)
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break
+            return best_value
+
+        else:
+            return self.get_action_alpha_beta(game_state.generate_successor(1), curDepth, True, alpha, beta)
+
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
