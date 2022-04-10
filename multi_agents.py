@@ -102,9 +102,9 @@ class ReflexAgent(Agent):
 
         # adding the "max tile to the corner" bonus
         max_bonus = 0
-        if max([board[0,0], board[0,3], board[3,0], board[3,3]]) == successor_game_state.max_tile:
+        if max([board[0, 0], board[0, 3], board[3, 0], board[3, 3]]) == successor_game_state.max_tile:
             max_bonus = 1
-        return snake_score + free_tiles_score + max_bonus*2
+        return snake_score + free_tiles_score + max_bonus * 2
 
 
 def score_evaluation_function(current_game_state):
@@ -188,12 +188,10 @@ class MinmaxAgent(MultiAgentSearchAgent):
 
         else:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.get_action_minimax(game_state.generate_successor(1, action), curDepth+1, True) for action in
+            scores = [self.get_action_minimax(game_state.generate_successor(1, action), curDepth + 1, True) for action
+                      in
                       legal_moves]
             return min(scores)
-
-
-
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -208,8 +206,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """*** YOUR CODE HERE ***"""
         legal_moves = game_state.get_agent_legal_actions()
         # Choose one of the best actions
-        scores = [self.get_action_alpha_beta(game_state.generate_successor(0, action), 0, False, float("-inf"), float("inf"))
-                  for action in legal_moves]
+        scores = [
+            self.get_action_alpha_beta(game_state.generate_successor(0, action), 0, False, float("-inf"), float("inf"))
+            for action in legal_moves]
         best_score = max(scores)
         best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
@@ -242,7 +241,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             legal_moves = game_state.get_opponent_legal_actions()
             min_val = np.float('inf')
             for action in legal_moves:
-                curr_val = self.get_action_alpha_beta(game_state.generate_successor(1, action), curDepth+1, True, alpha,
+                curr_val = self.get_action_alpha_beta(game_state.generate_successor(1, action), curDepth + 1, True,
+                                                      alpha,
                                                       beta)
                 min_val = min(curr_val, min_val)
                 beta = min(beta, min_val)
@@ -253,23 +253,62 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
-    """
-    Your expectimax agent (question 4)
-    """
-
     def get_action(self, game_state):
-        """
-        Returns the expectimax action using self.depth and self.evaluationFunction
 
-        The opponent should be modeled as choosing uniformly at random from their
-        legal moves.
-        """
-        """*** YOUR CODE HERE ***"""
-        util.raiseNotDefined()
+        legal_moves = game_state.get_agent_legal_actions()
+        # Choose one of the best actions
+        scores = [self.get_action_expectimax(game_state.generate_successor(0, action), 0, False) for action in
+                  legal_moves]
+        best_score = max(scores)
+        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
+        chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
+
+        return legal_moves[chosen_index]
+
+    def get_action_expectimax(self, game_state: GameState, curDepth, maxTurn):
+        if np.count_nonzero(game_state.board) == 16:
+            return 0
+
+        if curDepth == self.depth - 1 and not maxTurn:
+            legal_moves = game_state.get_opponent_legal_actions()
+            scores = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
+            return np.average(scores)
+
+        if maxTurn:
+            legal_moves = game_state.get_agent_legal_actions()
+            scores = [self.get_action_expectimax(game_state.generate_successor(0, action), curDepth, False) for action
+                      in
+                      legal_moves]
+            return max(scores)
+
+        else:
+            legal_moves = game_state.get_opponent_legal_actions()
+            scores = [self.get_action_expectimax(game_state.generate_successor(1, action), curDepth + 1, True) for
+                      action in
+                      legal_moves]
+            return np.average(scores)
 
 
+def get_next_score(board):
+    score = 0
+    for i in range(0, 3):
+        if board[i, 0] == board[i, 1]:
+            score += board[i, 0]
+        if board[i, 1] == board[i, 2]:
+            score += board[i, 0]
+        if board[i, 2] == board[i, 3]:
+            score += board[i, 0]
+    for j in range(0, 3):
+        if board[0, j] == board[1, j]:
+            score += board[i, 0]
+        if board[1, j] == board[1, j]:
+            score += board[i, 0]
+        if board[2, j] == board[2, j]:
+            score += board[i, 0]
 
-def better_evaluation_function(current_game_state):
+    return score
+
+def better_evaluation_function1(current_game_state):
     """
     Your extreme 2048 evaluation function (question 5).
 
@@ -294,7 +333,6 @@ def better_evaluation_function(current_game_state):
     """
     "*** YOUR CODE HERE ***"
 
-
     board = current_game_state.board
     # if np.count_nonzero(board) == 16:
     #     return -np.inf
@@ -304,7 +342,7 @@ def better_evaluation_function(current_game_state):
     scores3 = np.array([[3, 2, 1, 0], [4, 3, 2, 1], [5, 4, 3, 2], [6, 5, 4, 3]])
     scores4 = np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]])
 
-    scores = [0,1,1,2,2,2,3,3,3,3,4,4,4,5,5,6]
+    scores = [0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 6] * 3
 
     # calculating the max symmetric score:
     snake = 0
@@ -322,6 +360,36 @@ def better_evaluation_function(current_game_state):
     free_tiles_factor = 15 - np.unique(current_game_state.board).shape[0]
     free_tiles_score = (16 - np.count_nonzero(board)) / free_tiles_factor
 
-    return 5*snake_score + free_tiles_score
+    return 5 * snake_score + free_tiles_score
+
+def better_evaluation_function(current_game_state):
+    board = current_game_state.board
+    max_t = current_game_state.max_tile
+    score = 0
+    if max_t == board[0, 0] or max_t == board[0, 3] or max_t == board[3, 0] or max_t == board[3, 3]:
+        score += max_t*10
+
+    # scores1 = np.array([[6, 5, 4, 3], [5, 4, 3, 2], [4, 3, 2, 1], [3, 2, 1, 0]])
+    # scores2 = np.array([[3, 4, 5, 6], [2, 3, 4, 5], [1, 2, 3, 4], [0, 1, 2, 3]])
+    # scores3 = np.array([[3, 2, 1, 0], [4, 3, 2, 1], [5, 4, 3, 2], [6, 5, 4, 3]])
+    # scores4 = np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]])
+    scores1 = np.array([[1,2,3,4], [8,7,6,5], [9,10,11,12], [16,15,14,13]])
+    scores2 = np.array([[16,15,14,13], [9,10,11,12], [8,7,6,5], [1,2,3,4]])
+    scores3 = np.array([[4,3,2,1], [5,6,7,8], [12,11,10,9], [13,14,15,16]])
+    scores4 = np.array([[13,14,15,16], [12,11,10,9], [5,6,7,8], [4,3,2,1]])
+
+
+    # calculating the max symmetric score:
+    snake = 0
+    for s in [scores1, scores2, scores3, scores4]:
+        snake = max(snake, np.sum(np.multiply(4*s, board)))
+
+    snake_score = snake / np.sum(scores1)
+    if np.count_nonzero(board) in [15, 16]:
+        print(1)
+        return -np.inf
+    return snake_score + score
+
+
 # Abbreviation
 better = better_evaluation_function
