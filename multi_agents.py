@@ -308,6 +308,7 @@ def get_next_score(board):
 
     return score
 
+
 def better_evaluation_function1(current_game_state):
     """
     Your extreme 2048 evaluation function (question 5).
@@ -362,33 +363,121 @@ def better_evaluation_function1(current_game_state):
 
     return 5 * snake_score + free_tiles_score
 
+
+scores1 = np.array([[20, 19, 14, 13], [9, 10, 11, 12], [8, 7, 6, 5], [1, 2, 3, 4]])
+# scores2 = np.transpose(scores1)
+scores2 = np.array([[1, 2, 3, 4], [8, 7, 6, 5], [9, 10, 11, 12], [20, 19, 14, 13]])
+scores3 = np.array([[4, 3, 2, 1], [5, 6, 7, 8], [12, 11, 10, 9], [13, 14, 19, 20]])
+scores4 = np.array([[13, 14, 19, 20], [12, 11, 10, 9], [5, 6, 7, 8], [4, 3, 2, 1]])
+# scores1 = np.array([[7, 5, 4, 3], [5, 4, 3, 2], [4, 3, 2, 1], [3, 2, 1, 0]])
+# scores2 = np.array([[3, 4, 5, 7], [2, 3, 4, 5], [1, 2, 3, 4], [0, 1, 2, 3]])
+# scores3 = np.array([[3, 2, 1, 0], [4, 3, 2, 1], [5, 4, 3, 2], [7, 5, 4, 3]])
+# scores4 = np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 7]])
+scores = [scores1, scores2, scores3, scores4]
+scores_opt = np.array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,19,20])
+
+def monotonic(l):
+    # l = np.trim_zeros(l)
+    # if l.shape[0] == 0:
+    #     return False
+    # if np.max(l)/(0.000001+np.min(l))>32:
+    #     return False
+    return np.all(np.diff(l) < 0) or np.all(np.diff(np.flip(l)) < 0)
+
+
+def smoothnes(board):
+    score = 0
+    board_log = np.log2(board)
+    board_log[board_log==-np.inf]=0
+    for i in range(1,4):
+        for j in range(1,4):
+            if board_log[i,j] != 0:
+                if board_log[i, j-1] != 0:
+                    score -= np.abs(board_log[i,j] - board_log[i,j-1])
+                if board_log[i-1, j] != 0:
+                    score -= np.abs(board_log[i, j] - board_log[i-1, j])
+    for i in range(1,4):
+        if board_log[0,i] != 0 and board_log[0,i-1] != 0:
+            score -= np.abs(board_log[0, i] - board_log[0, i-1])
+        if board_log[i, 0] != 0 and board_log[i - 1, 0] != 0:
+            score -= np.abs(board_log[i, 0] - board_log[i - 1, 0])
+    return score
+
+
+def monotonicity(board):
+    board_log = np.log2(board)
+
+    up = 0
+    down = 0
+    left = 0
+    right = 0
+
+    for i in range(4):
+        row = board_log[i,:]
+        row = row[row!=-np.inf]
+        collum = board_log[:,i]
+        collum = collum[collum!=-np.inf]
+        for v in np.diff(row):
+            if v > 0:
+                left -= v
+            else:
+                right += v
+        for v in np.diff(collum):
+            if v > 0:
+                up -= v
+            else:
+                down += v
+    # print(up, down, left, right)
+    return max([up,down])+max([left,right])
+
+
 def better_evaluation_function(current_game_state):
+    board = current_game_state.board
+
+    if np.count_nonzero(board) == 16:
+        return -np.inf
+
+    smoothness_score = smoothnes(board)
+    monotonicity_score = monotonicity(board)
+    empty_score = np.log2(16-np.count_nonzero(board))
+    if current_game_state.max_tile in [board[0,0], board[0,3], board[3,0], board[3,3]]:
+        max_score = np.log2(current_game_state.max_tile)
+    else:
+        max_score = -np.log2(current_game_state.max_tile)
+    return 0.1*smoothness_score + monotonicity_score + 1.7*empty_score + max_score
+
+def better_evaluation_function2(current_game_state):
     board = current_game_state.board
     max_t = current_game_state.max_tile
     score = 0
-    if max_t == board[0, 0] or max_t == board[0, 3] or max_t == board[3, 0] or max_t == board[3, 3]:
-        score += max_t*10
+    if max_t in [board[0, 0], board[0, 3], board[3, 0], board[3, 3]]:
+        score += 2
 
-    # scores1 = np.array([[6, 5, 4, 3], [5, 4, 3, 2], [4, 3, 2, 1], [3, 2, 1, 0]])
-    # scores2 = np.array([[3, 4, 5, 6], [2, 3, 4, 5], [1, 2, 3, 4], [0, 1, 2, 3]])
-    # scores3 = np.array([[3, 2, 1, 0], [4, 3, 2, 1], [5, 4, 3, 2], [6, 5, 4, 3]])
-    # scores4 = np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]])
-    scores1 = np.array([[1,2,3,4], [8,7,6,5], [9,10,11,12], [16,15,14,13]])
-    scores2 = np.array([[16,15,14,13], [9,10,11,12], [8,7,6,5], [1,2,3,4]])
-    scores3 = np.array([[4,3,2,1], [5,6,7,8], [12,11,10,9], [13,14,15,16]])
-    scores4 = np.array([[13,14,15,16], [12,11,10,9], [5,6,7,8], [4,3,2,1]])
+    max_mon = 0
 
+    if monotonic(board[0, :]):
+        max_mon += sum(board[0, :])
+    if monotonic(board[3, :]):
+        max_mon += sum(board[3, :])
+    if monotonic(board[:,0]):
+        max_mon += sum(board[:,0])
+    if monotonic(board[:,3]):
+        max_mon += sum(board[:,3])
+    max_mon /= sum(np.sort(board.flatten())[-4:])
+    # return score
 
     # calculating the max symmetric score:
     snake = 0
-    for s in [scores1, scores2, scores3, scores4]:
-        snake = max(snake, np.sum(np.multiply(4*s, board)))
-
-    snake_score = snake / np.sum(scores1)
-    if np.count_nonzero(board) in [15, 16]:
-        print(1)
+    for s in scores:
+        snake = max(snake, np.sum(np.multiply(s, board)))
+    max_possible = np.sum(np.multiply(scores_opt, np.sort(board.flatten())))
+    snake_score = snake / max_possible
+    if np.count_nonzero(board) in [16]:
+        # print(1)
         return -np.inf
-    return snake_score + score
+    final = snake_score + score +max_mon
+
+    return final
 
 
 # Abbreviation
