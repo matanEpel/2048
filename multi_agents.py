@@ -146,53 +146,55 @@ class MultiAgentSearchAgent(Agent):
 class MinmaxAgent(MultiAgentSearchAgent):
     def get_action(self, game_state):
         """
-        Returns the minimax action from the current gameState using self.depth
-        and self.evaluationFunction.
-
-        Here are some method calls that might be useful when implementing minimax.
-
-        game_state.get_legal_actions(agent_index):
-            Returns a list of legal actions for an agent
-            agent_index=0 means our agent, the opponent is agent_index=1
-
-        Action.STOP:
-            The stop direction, which is always legal
-
-        game_state.generate_successor(agent_index, action):
-            Returns the successor game state after an agent takes an action
+        get action returns the next desired action using the minmax algorithm.
+        :param game_state: the current game state
+        :return: the action we want to do
         """
-        """*** YOUR CODE HERE ***"""
 
         legal_moves = game_state.get_agent_legal_actions()
         # Choose one of the best actions
-        scores = [self.get_action_minimax(game_state.generate_successor(0, action), 0, False) for action in legal_moves]
-        best_score = max(scores)
-        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
+        scores_max = [self.get_action_minimax(game_state.generate_successor(0, action), 0, False) for action in legal_moves]
+        best_score = max(scores_max)
+        best_indices = [index for index in range(len(scores_max)) if scores_max[index] == best_score]
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
 
         return legal_moves[chosen_index]
 
     def get_action_minimax(self, game_state: GameState, curDepth, maxTurn):
-        if np.count_nonzero(game_state.board) == 16:
-            return 0
+        """
+        this function returns the minamx score of a state (when going curDepth down)
+        :param game_state: the curr game state
+        :param curDepth: the curr depth
+        :param maxTurn: is it max's turn or min's turn
+        :return: the action cost
+        """
 
+        # there are no more states - we lose:
+        if maxTurn and len(game_state.get_agent_legal_actions()) == 0:
+            return -np.inf
+        elif not maxTurn and len(game_state.get_opponent_legal_actions()) == 0:
+            return -np.inf
+
+        # if we are at the max depth and we are in the opponent turn - we are finishing:
         if curDepth == self.depth - 1 and not maxTurn:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
-            return min(scores)
+            # calculating score of each state and getting the min:
+            scores_max = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
+            return min(scores_max)
 
+        # if it is max's turn:
         if maxTurn:
+            # getting all options and getting the max:
             legal_moves = game_state.get_agent_legal_actions()
-            scores = [self.get_action_minimax(game_state.generate_successor(0, action), curDepth, False) for action in
+            scores_max = [self.get_action_minimax(game_state.generate_successor(0, action), curDepth, False) for action in
                       legal_moves]
-            return max(scores)
-
+            return max(scores_max)
         else:
+            # if it is the opponent turn, we choose the min of all the options:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.get_action_minimax(game_state.generate_successor(1, action), curDepth + 1, True) for action
-                      in
-                      legal_moves]
-            return min(scores)
+            scores_max = [self.get_action_minimax(game_state.generate_successor(1, action), curDepth + 1, True) for action
+                      in legal_moves]
+            return min(scores_max)
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -202,32 +204,47 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
     def get_action(self, game_state):
         """
-        Returns the minimax action using self.depth and self.evaluationFunction
+        get action returns the next desired action using the minmax algorithm.
+        :param game_state: the current game state
+        :return: the action we want to do
         """
-        """*** YOUR CODE HERE ***"""
         legal_moves = game_state.get_agent_legal_actions()
         # Choose one of the best actions
-        scores = [
-            self.get_action_alpha_beta(game_state.generate_successor(0, action), 0, False, float("-inf"), float("inf"))
-            for action in legal_moves]
-        best_score = max(scores)
-        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
+        scores_alpha = [self.get_action_alpha_beta(game_state.generate_successor(0, action), 0, False, float("-inf"), float("inf"))
+                    for action in legal_moves]
+        best_score = max(scores_alpha)
+        best_indices = [index for index in range(len(scores_alpha)) if scores_alpha[index] == best_score]
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
 
         return legal_moves[chosen_index]
 
     def get_action_alpha_beta(self, game_state: GameState, curDepth, maxTurn, alpha, beta):
-        if np.count_nonzero(game_state.board) == 16:
-            return 0
+        """
+        returns the best score of the current state using alpha-beta minmax
+        :param game_state: current game state
+        :param curDepth: the current depth
+        :param maxTurn: is it max's turn?
+        :param alpha: alpha value
+        :param beta: beta value
+        :return: the score
+        """
+        # there are no more states - we lose:
+        if maxTurn and len(game_state.get_agent_legal_actions()) == 0:
+            return -np.inf
+        elif not maxTurn and len(game_state.get_opponent_legal_actions()) == 0:
+            return -np.inf
 
+        # if we are at the max depth and we are in the opponent turn - we are finishing:
         if curDepth == self.depth - 1 and not maxTurn:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
-            return min(scores)
+            scores_alpha = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
+            return min(scores_alpha)
 
+        # if it is max's turn:
         if maxTurn:
             legal_moves = game_state.get_agent_legal_actions()
             max_val = np.float('-inf')
+            # running through all the moves and breaking if the alpha-beta condition is satisfied
             for action in legal_moves:
                 curr_val = self.get_action_alpha_beta(game_state.generate_successor(0, action), curDepth, False, alpha,
                                                       beta)
@@ -235,12 +252,12 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 alpha = max(alpha, max_val)
                 if beta <= alpha:
                     break
-
             return max_val
 
         else:
             legal_moves = game_state.get_opponent_legal_actions()
             min_val = np.float('inf')
+            # running through all the moves and breaking if the alpha-beta condition is satisfied
             for action in legal_moves:
                 curr_val = self.get_action_alpha_beta(game_state.generate_successor(1, action), curDepth + 1, True,
                                                       alpha,
@@ -253,9 +270,25 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             return min_val
 
 
+def weight(action):
+    """
+    returns the chance of getting this tile on the board
+    :param action: the action
+    :return: 0.9 (90%) if it is 2, 0.1 (10%) if it is false
+    """
+    if action.value == 2:
+        return 0.9
+    else:
+        return 0.1
+
+
 class ExpectimaxAgent(MultiAgentSearchAgent):
     def get_action(self, game_state):
-
+        """
+        get action returns the next desired action using the expectimax algorithm.
+        :param game_state: the current game state
+        :return: the action we want to do
+        """
         legal_moves = game_state.get_agent_legal_actions()
         # Choose one of the best actions
         scores = [self.get_action_expectimax(game_state.generate_successor(0, action), 0, False) for action in
@@ -267,59 +300,50 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         return legal_moves[chosen_index]
 
     def get_action_expectimax(self, game_state: GameState, curDepth, maxTurn):
-        if np.count_nonzero(game_state.board) == 16:
-            return 0
+        # there are no more states - we lose:
+        if maxTurn and len(game_state.get_agent_legal_actions()) == 0:
+            return -np.inf
+        elif not maxTurn and len(game_state.get_opponent_legal_actions()) == 0:
+            return -np.inf
 
+        # if we are at the max depth and we are in the opponent turn - we are finishing:
         if curDepth == self.depth - 1 and not maxTurn:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.evaluation_function(game_state.generate_successor(1, action)) for action in legal_moves]
-            return np.average(scores)
+            scores = [self.evaluation_function(game_state.generate_successor(1, action))*weight(action)
+                      for action in legal_moves]
+            # the *2 is because we already did the averaging for the 2,4 options in the same tile:
+            return np.average(scores)*2
 
+        # max's turn:
         if maxTurn:
             legal_moves = game_state.get_agent_legal_actions()
-            scores = [self.get_action_expectimax(game_state.generate_successor(0, action), curDepth, False) for action
-                      in legal_moves]
-            return max(scores)
+            scores_expect = [self.get_action_expectimax(game_state.generate_successor(0, action), curDepth, False) for
+                             action in legal_moves]
+            # returning the best possible move:
+            return max(scores_expect)
 
         else:
+            # min's turn
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.get_action_expectimax(game_state.generate_successor(1, action), curDepth + 1, True) for
-                      action in legal_moves]
-            return np.average(scores)
+            scores_expect = [self.get_action_expectimax(game_state.generate_successor(1, action), curDepth + 1, True)*
+                             weight(action) for action in legal_moves]
+            # returning the expected score of the current state:
+            return np.average(scores_expect)
 
 
-def get_next_score(board):
+def smoothness(board):
+    """
+    measures the smoothness of the boar
+    Meaning, how much neighbor tiles are similar
+    :param board: the board
+    :return: the smoothness score
+    """
     score = 0
-    for i in range(0, 3):
-        if board[i, 0] == board[i, 1]:
-            score += board[i, 0]
-        if board[i, 1] == board[i, 2]:
-            score += board[i, 0]
-        if board[i, 2] == board[i, 3]:
-            score += board[i, 0]
-    for j in range(0, 3):
-        if board[0, j] == board[1, j]:
-            score += board[i, 0]
-        if board[1, j] == board[1, j]:
-            score += board[i, 0]
-        if board[2, j] == board[2, j]:
-            score += board[i, 0]
-
-    return score
-
-
-scores1 = np.array([[20, 19, 14, 13], [9, 10, 11, 12], [8, 7, 6, 5], [1, 2, 3, 4]])
-scores2 = np.array([[1, 2, 3, 4], [8, 7, 6, 5], [9, 10, 11, 12], [20, 19, 14, 13]])
-scores3 = np.array([[4, 3, 2, 1], [5, 6, 7, 8], [12, 11, 10, 9], [13, 14, 19, 20]])
-scores4 = np.array([[13, 14, 19, 20], [12, 11, 10, 9], [5, 6, 7, 8], [4, 3, 2, 1]])
-scores = [scores1, scores2, scores3, scores4]
-scores_opt = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 19, 20])
-
-
-def smoothnes(board):
-    score = 0
+    # applying log in order to the distance (in amount of tiles needed to be joined) from 0
     board_log = np.log2(board)
     board_log[board_log == -np.inf] = 0
+
+    # for each location of the board - adding the distance from it's neighbors to the score
     for i in range(1, 4):
         for j in range(1, 4):
             if board_log[i, j] != 0:
@@ -327,6 +351,7 @@ def smoothnes(board):
                     score -= np.abs(board_log[i, j] - board_log[i, j - 1])
                 if board_log[i - 1, j] != 0:
                     score -= np.abs(board_log[i, j] - board_log[i - 1, j])
+    # adding the top row and left column:
     for i in range(1, 4):
         if board_log[0, i] != 0 and board_log[0, i - 1] != 0:
             score -= np.abs(board_log[0, i] - board_log[0, i - 1])
@@ -368,7 +393,7 @@ def better_evaluation_function(current_game_state):
     if np.count_nonzero(board) == 16:
         return -np.inf
 
-    smoothness_score = smoothnes(board)
+    smoothness_score = smoothness(board)
     monotonicity_score = monotonicity(board)
     empty_score = np.log2(16 - np.count_nonzero(board))
     if current_game_state.max_tile in [board[0, 0], board[0, 3], board[3, 0], board[3, 3]]:
