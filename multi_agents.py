@@ -361,6 +361,13 @@ def smoothness(board):
 
 
 def monotonicity(board):
+    """
+    measures the monotonicity of the board
+    meaning - how much the up/down and the left/right directions are monotonic
+    :param board: the current board
+    :return: the monotonicity score
+    """
+    # applying log in order to the distance (in amount of tiles needed to be joined) from 0
     board_log = np.log2(board)
 
     up = 0
@@ -373,6 +380,8 @@ def monotonicity(board):
         row = row[row != -np.inf]
         collum = board_log[:, i]
         collum = collum[collum != -np.inf]
+
+        # adding the monotonicity between two tiles for the right direction (up/down, left/right):
         for v in np.diff(row):
             if v > 0:
                 left -= v
@@ -388,19 +397,31 @@ def monotonicity(board):
 
 
 def better_evaluation_function(current_game_state):
+    """
+    the evaluation function. description for the logic behind it is in the readme
+    :param current_game_state: the current game state
+    :return: the evaluation value
+    """
     board = current_game_state.board
 
-    if np.count_nonzero(board) == 16:
+    # if we do not have more moves: we don't want this option!!!
+    if len(current_game_state.get_agent_legal_actions) == 0:
         return -np.inf
 
     smoothness_score = smoothness(board)
     monotonicity_score = monotonicity(board)
+
+    # adding score for the amount of empty cells:
     empty_score = np.log2(16 - np.count_nonzero(board))
+
+    # adding/subtracting score for the max tile to be in one of the corners
     if current_game_state.max_tile in [board[0, 0], board[0, 3], board[3, 0], board[3, 3]]:
         max_score = np.log2(current_game_state.max_tile)
     else:
         max_score = -np.log2(current_game_state.max_tile)
-    return 0.1 * smoothness_score + monotonicity_score + 1.7 * empty_score + max_score
+
+    # combining all the measurements:
+    return 0.1 * smoothness_score + monotonicity_score + 1.8 * empty_score + max_score
 
 
 # Abbreviation
